@@ -4,7 +4,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
-from pprint import pprint
+import argparse
 
 
 def parse_book_page(content, book_id):
@@ -71,26 +71,34 @@ def download_image(url, folder='images/'):
     return path
 
 
-Path("books").mkdir(parents=True, exist_ok=True)
-Path("images").mkdir(parents=True, exist_ok=True)
+def main():
+    Path("books").mkdir(parents=True, exist_ok=True)
+    Path("images").mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(
+        description='Укажите раз укажите с какой по какую книгу скачать. По умолчанию скачиваются первые 10 книг'
+    )
+    parser.add_argument('start_id', help='С какой книги начать', type=int, default=1)
+    parser.add_argument('end_id', help='На какой книге остановиться', type=int, default=10)
+    args = parser.parse_args()
 
-number_of_books = 11
+    for book_id in range(args.start_id, (args.end_id+1)):
 
-for book_id in range(number_of_books):
+        url = f"https://tululu.org/b{book_id}/"
 
-    url = f"https://tululu.org/b{book_id}/"
+        response = requests.get(url)
+        response.raise_for_status()
 
-    response = requests.get(url)
-    response.raise_for_status()
+        try:
+            check_for_redirect(response)
+            book = parse_book_page(response.content, book_id)
+            print(f"Заголовок: {book['title']} \n{book['genres']} \n")
+            if book['book_url']:
+                download_txt(url, book['title'], folder='books/')
+            download_image(book['image_url'])
 
-    try:
-        check_for_redirect(response)
-        book = parse_book_page(response.content, book_id)
-        print(f"Заголовок: {book['title']} \n{book['genres']} \n")
-        if book['book_url']:
-            download_txt(url, book['title'], folder='books/')
-        download_image(book['image_url'])
+        except requests.HTTPError:
+            print(f'Книги с id {book_id}, нет \n')
 
-    except requests.HTTPError:
-        print(f'Книги с id {book_id}, нет \n')
 
+if __name__ == '__main__':
+    main()
