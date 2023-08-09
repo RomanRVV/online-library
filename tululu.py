@@ -4,6 +4,43 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
+from pprint import pprint
+
+
+def parse_book_page(content, book_id):
+    soup = BeautifulSoup(content, 'lxml')
+    comments = []
+
+    title_and_author = soup.find('h1').text.split('::')
+    title = title_and_author[0].strip()
+    title_and_id = f'{book_id}.{title}'
+    author = title_and_author[1].strip()
+
+    comments_tags = soup.find_all(class_="texts")
+    for comment in comments_tags:
+        comments.append(comment.find('span').text)
+
+    genres_tags = soup.find('span', class_='d_book')
+    genres = genres_tags.find_all('a')
+    genres_text = [genre.text for genre in genres]
+
+    image_url = soup.find(class_="bookimage").find('img')['src']
+
+    book_url = soup.find(href=f'/txt.php?id={book_id}')
+    full_book_url = None
+    if book_url:
+        full_book_url = urljoin('https://tululu.org/', book_url['href'])
+
+    book = {
+        'title': title_and_id,
+        'author': author,
+        'genres': genres_text,
+        'comments': comments,
+        'book_url': full_book_url,
+        'image_url': urljoin('https://tululu.org/', image_url),
+    }
+
+    return book
 
 
 def check_for_redirect(response):
@@ -11,7 +48,10 @@ def check_for_redirect(response):
         raise requests.HTTPError
 
 
-def download_txt(response, filename, folder='books/'):
+def download_txt(url, filename, folder='books/'):
+    response = requests.get(url)
+    response.raise_for_status()
+
     correct_filename = sanitize_filename(filename)
     path = os.path.join(folder, f'{correct_filename}.txt')
     with open(path, 'wb') as file:
@@ -38,40 +78,19 @@ number_of_books = 11
 
 for book_id in range(number_of_books):
 
-    payload = {
-        'id': book_id
-    }
+    url = f"https://tululu.org/b{book_id}/"
 
-    url = "https://tululu.org/txt.php"
-    url_for_title = f"https://tululu.org/b{book_id}/"
-
-    response = requests.get(url, params=payload)
+    response = requests.get(url)
     response.raise_for_status()
-
-    response_for_title = requests.get(url_for_title)
-    response_for_title.raise_for_status()
-
-    soup = BeautifulSoup(response_for_title.text, 'lxml')
-    title_and_author = soup.find('h1').text.split('::')
-    title = title_and_author[0].strip()
-    title_and_id = f'{book_id}.{title}'
 
     try:
         check_for_redirect(response)
-        img_url = soup.find(class_="bookimage").find('img')['src']
-        comments = soup.find_all(class_="texts")
-        genres_tags = soup.find('span', class_='d_book')
-        genres = genres_tags.find_all('a')
-        full_img_url = urljoin('https://tululu.org/', img_url)
-        # download_txt(response, title_and_id, folder='books/')
-        # download_image(full_img_url)
-        print('Загловок:', title)
-        # print(genre.text)
-        print(full_img_url)
-        for genre in genres:
-            print(genre.text)
-        # for comment in comments:
-        #     print(comment.find('span').text)
+        book = parse_book_page(response.content, book_id)
+        print(f"Заголовок: {book['title']} \n{book['genres']} \n")
+        if book['book_url']:
+            download_txt(url, book['title'], folder='books/')
+        download_image(book['image_url'])
+
     except requests.HTTPError:
-        print(f'Книги с id {book_id}, нет')
+        print(f'Книги с id {book_id}, нет \n')
 
