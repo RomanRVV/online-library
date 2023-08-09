@@ -60,13 +60,18 @@ for book_id in range(number_of_books):
         check_for_redirect(response)
         img_url = soup.find(class_="bookimage").find('img')['src']
         comments = soup.find_all(class_="texts")
+        genres_tags = soup.find('span', class_='d_book')
+        genres = genres_tags.find_all('a')
         full_img_url = urljoin('https://tululu.org/', img_url)
         # download_txt(response, title_and_id, folder='books/')
         # download_image(full_img_url)
         print('Загловок:', title)
+        # print(genre.text)
         print(full_img_url)
-        for comment in comments:
-            print(comment.find('span').text)
+        for genre in genres:
+            print(genre.text)
+        # for comment in comments:
+        #     print(comment.find('span').text)
     except requests.HTTPError:
         print(f'Книги с id {book_id}, нет')
 
