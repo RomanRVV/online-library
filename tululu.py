@@ -1,10 +1,12 @@
 import os.path
+import time
 import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
 import argparse
+import sys
 
 
 def parse_book_page(content, book_id):
@@ -85,10 +87,9 @@ def main():
 
         url = f"https://tululu.org/b{book_id}/"
 
-        response = requests.get(url)
-        response.raise_for_status()
-
         try:
+            response = requests.get(url)
+            response.raise_for_status()
             check_for_redirect(response)
             book = parse_book_page(response.content, book_id)
             print(f"Заголовок: {book['title']} \n{book['genres']} \n")
@@ -96,8 +97,13 @@ def main():
                 download_txt(url, book['title'], folder='books/')
             download_image(book['image_url'])
 
-        except requests.HTTPError:
-            print(f'Книги с id {book_id}, нет \n')
+        except requests.HTTPError as e:
+            sys.stderr.write(f'Ошибка {e} \n')
+            sys.stderr.write(f'Что то не так со страницой, книги с id {book_id}, там нет \n')
+        except requests.ConnectionError as e:
+            sys.stderr.write(f'Ошибка {e} \n')
+            sys.stderr.write('Повторная попытка соединения произойдет через 3 секунды \n')
+            time.sleep(3)
 
 
 if __name__ == '__main__':
