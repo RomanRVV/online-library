@@ -11,16 +11,13 @@ import sys
 
 def parse_book_page(content, book_id):
     soup = BeautifulSoup(content, 'lxml')
-    comments = []
-
     title_and_author = soup.find('h1').text.split('::')
     title = title_and_author[0].strip()
     title_and_id = f'{book_id}.{title}'
     author = title_and_author[1].strip()
 
     comments_tags = soup.find_all(class_="texts")
-    for comment in comments_tags:
-        comments.append(comment.find('span').text)
+    comments = [comment.find('span').text for comment in comments_tags]
 
     genres_tags = soup.find('span', class_='d_book')
     genres = genres_tags.find_all('a')
@@ -99,11 +96,12 @@ def main():
 
         except requests.HTTPError as e:
             sys.stderr.write(f'Ошибка {e} \n')
-            sys.stderr.write(f'Что то не так со страницой, книги с id {book_id}, там нет \n')
+            sys.stderr.write(f'Что то не так со страницой {url}, книги с id {book_id}, там нет \n')
+
         except requests.ConnectionError as e:
             sys.stderr.write(f'Ошибка {e} \n')
-            sys.stderr.write('Повторная попытка соединения произойдет через 3 секунды \n')
-            time.sleep(3)
+            sys.stderr.write('Повторная попытка соединения произойдет через 5 секунд \n')
+            time.sleep(5)
 
 
 if __name__ == '__main__':
