@@ -9,7 +9,7 @@ import argparse
 import sys
 
 
-def parse_book_page(content, book_id):
+def parse_book_page(content, url, book_id):
     soup = BeautifulSoup(content, 'lxml')
     title_and_author = soup.find('h1').text.split('::')
     title = title_and_author[0].strip()
@@ -28,7 +28,7 @@ def parse_book_page(content, book_id):
     book_url = soup.find(href=f'/txt.php?id={book_id}')
     full_book_url = None
     if book_url:
-        full_book_url = urljoin('https://tululu.org/', book_url['href'])
+        full_book_url = urljoin(url, book_url['href'])
 
     book = {
         'title': title_and_id,
@@ -36,7 +36,7 @@ def parse_book_page(content, book_id):
         'genres': genres_text,
         'comments': comments,
         'book_url': full_book_url,
-        'image_url': urljoin('https://tululu.org/', image_url),
+        'image_url': urljoin(url, image_url),
     }
 
     return book
@@ -50,7 +50,7 @@ def check_for_redirect(response):
 def download_txt(url, filename, folder='books/'):
     response = requests.get(url)
     response.raise_for_status()
-
+    check_for_redirect(response)
     correct_filename = sanitize_filename(filename)
     path = os.path.join(folder, f'{correct_filename}.txt')
     with open(path, 'wb') as file:
@@ -61,6 +61,7 @@ def download_txt(url, filename, folder='books/'):
 def download_image(url, folder='images/'):
     response = requests.get(url)
     response.raise_for_status()
+    check_for_redirect(response)
     url_tuple = urlsplit(url)
     path_to_file = unquote(url_tuple.path)
     filename = path_to_file.split('/')[-1]
@@ -88,7 +89,7 @@ def main():
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response)
-            book = parse_book_page(response.content, book_id)
+            book = parse_book_page(response.content, url, book_id)
             print(f"Заголовок: {book['title']} \n{book['genres']} \n")
             if book['book_url']:
                 download_txt(url, book['title'], folder='books/')
