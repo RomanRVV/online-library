@@ -75,7 +75,7 @@ def main():
     Path("books").mkdir(parents=True, exist_ok=True)
     Path("images").mkdir(parents=True, exist_ok=True)
     parser = argparse.ArgumentParser(
-        description='Укажите раз укажите с какой по какую книгу скачать. По умолчанию скачиваются первые 10 книг'
+        description='Укажите с какой по какую книгу скачать. По умолчанию скачиваются первые 10 книг'
     )
     parser.add_argument('start_id', help='С какой книги начать', type=int, default=1)
     parser.add_argument('end_id', help='На какой книге остановиться', type=int, default=10)
