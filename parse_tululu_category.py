@@ -18,13 +18,13 @@ def get_books_url(page_url):
     response = requests.get(page_url)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, 'lxml')
-    books_tags = soup.find_all(class_='d_book')
-    books_id = [book_tag.find('a')['href'] for book_tag in books_tags]
+    books_tag = soup.select('table.d_book')
+    books_id = [book_tag.select_one('a')['href'] for book_tag in books_tag]
     books_url = [urljoin(url, book_id) for book_id in books_id]
     return books_url
 
 
-number_of_pages = 4
+number_of_pages = 1
 books_information = []
 
 for page_number in range(1, number_of_pages+1):

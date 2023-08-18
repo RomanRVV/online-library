@@ -11,21 +11,21 @@ import sys
 
 def parse_book_page(content, url, book_id):
     soup = BeautifulSoup(content, 'lxml')
-    title_and_author = soup.find('h1').text.split('::')
+    title_and_author = soup.select_one('h1').text.split('::')
     title = title_and_author[0].strip()
     title_and_id = f'{book_id}.{title}'
     author = title_and_author[1].strip()
 
-    comments_tags = soup.find_all(class_="texts")
-    comments = [comment.find('span').text for comment in comments_tags]
+    comments_tags = soup.select("div.texts")
+    comments = [comment.select_one('span').text for comment in comments_tags]
 
-    genres_tags = soup.find('span', class_='d_book')
-    genres = genres_tags.find_all('a')
+    genres = soup.select('span.d_book a')
     genres_text = [genre.text for genre in genres]
 
-    image_url = soup.find(class_="bookimage").find('img')['src']
+    image_url = soup.select_one('div.bookimage img')['src']
 
-    book_url = soup.find(href=f'/txt.php?id={book_id}')
+    book_url = soup.select('table.d_book a')[-3]
+
     full_book_url = None
     if book_url:
         full_book_url = urljoin(url, book_url['href'])
