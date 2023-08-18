@@ -21,7 +21,7 @@ python tululu.py 1 10
 
 
 ## Скрипт parse_tululu_category.py
-Скрипт умеет скачивать книги с сайта [Tululu](https://tululu.org/), в категории [Научная фантастика](https://tululu.org/l55/) 
+Скрипт умеет скачивать книги с сайта [Tululu](https://tululu.org/), в категории [Научная фантастика](https://tululu.org/l55/), 
 по страницам.
 
 ### Аргументы:
